@@ -13,7 +13,7 @@ import Settings from './pages/Settings';
 
 function App() {
   return (
-    <Router>
+    <Router basename="/ELAMLI_PAD/"> {/* Add the base path */}
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
