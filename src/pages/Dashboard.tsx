@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { ref, get } from 'firebase/database';
 import { database } from '../firebase/config';
 import { format } from 'date-fns';
-import arLocale from 'date-fns/locale/ar'; // استيراد اللغة العربية
+import { ar } from 'date-fns/locale/ar';
 import { 
   ShoppingBag, 
   DollarSign, 
   TrendingUp, 
   Clock,
   ChevronLeft,
-  Menu
+  Phone
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -23,7 +23,6 @@ import {
 import Header from '../components/Header';
 import StatCard from '../components/StatCard';
 import OrderStatusBadge from '../components/OrderStatusBadge';
-import Sidebar from '../components/Sidebar';
 import { Order, DashboardStats } from '../types';
 
 const Dashboard: React.FC = () => {
@@ -35,8 +34,7 @@ const Dashboard: React.FC = () => {
     recentOrders: []
   });
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null); // حالة للخطأ
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,7 +61,7 @@ const Dashboard: React.FC = () => {
           );
           
           const recentOrders = [...orders]
-            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)) // حماية ضد createdAt غير معرف
+            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
             .slice(0, 5);
           
           setStats({
@@ -95,8 +93,6 @@ const Dashboard: React.FC = () => {
     { name: 'يوليو', orders: 40 },
   ];
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100" dir="rtl">
@@ -114,31 +110,13 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-2 sm:p-4" dir="rtl">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-
-      {/* Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40" 
-          onClick={toggleSidebar}
-        />
-      )}
+    <div className="min-h-screen bg-gray-100" dir="rtl">
+      {/* Header يحتوي على زر القائمة */}
+      <Header pendingOrdersCount={stats.pendingOrders} />
 
       {/* Main Content */}
-      <div className="flex-1">
-        <div className="flex items-center justify-between mb-4 bg-white p-2 rounded-lg shadow-md flex-wrap gap-2">
-          <Header />
-          <button 
-            className="p-2 text-indigo-900" 
-            onClick={toggleSidebar}
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-        </div>
-        
-        <div className="space-y-4">
+      <div className="flex-1 p-2 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:gap-4 space-y-4 sm:space-y-0">
           <StatCard 
             title="إجمالي الطلبات" 
             value={stats.totalOrders} 
@@ -197,27 +175,44 @@ const Dashboard: React.FC = () => {
             
             <div className="space-y-4">
               {stats.recentOrders.map((order) => (
-                <div key={order.id} className="border-b pb-4 last:border-b-0">
-                  <div className="flex items-center">
+                <div key={order.id} className="border-b pb-4 last:border-b-0 flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                  <div className="flex items-center space-x-4 space-x-reverse">
                     <img 
                       className="h-10 w-10 rounded-md object-cover flex-shrink-0" 
                       src={order.imageUrl || 'https://via.placeholder.com/40'} 
                       alt={order.productName || 'منتج'} 
                     />
-                    <div className="mr-4 flex-1 text-right">
+                    <div className="text-right">
                       <div className="text-sm font-medium text-gray-900">{order.productName || 'غير معروف'}</div>
                       <div className="text-sm text-gray-500">${order.productPrice || '0.00'}</div>
+                      <div className="text-xs text-gray-400">رقم: {order.id.slice(0, 8)}</div>
                     </div>
                   </div>
-                  <div className="text-sm text-gray-900 text-right">{order.fullName || 'غير محدد'}</div>
-                  <div className="text-sm text-gray-500 text-right">{order.city || 'غير محدد'}</div>
-                  <div className="text-sm text-gray-500 text-right">
-                    {order.createdAt 
-                      ? format(new Date(order.createdAt), 'dd MMMM yyyy', { locale: arLocale })
-                      : 'غير متوفر'}
+                  <div className="mt-2 sm:mt-0 sm:flex-1 text-right">
+                    <div className="text-sm text-gray-900">{order.fullName || 'غير محدد'}</div>
+                    <div className="text-sm text-gray-500 flex items-center justify-end space-x-2 space-x-reverse">
+                      <span>{order.phone || 'غير متوفر'}</span>
+                      {order.phone && (
+                        <a
+                          href={`tel:${order.phone}`}
+                          className="text-indigo-600 hover:text-indigo-800"
+                          title="اتصال بالعميل"
+                        >
+                          <Phone className="h-5 w-5" />
+                        </a>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-500">{order.city || 'غير محدد'}</div>
                   </div>
-                  <div className="mt-2 text-right">
-                    <OrderStatusBadge status={order.status || 'pending'} />
+                  <div className="mt-2 sm:mt-0 text-right">
+                    <div className="text-sm text-gray-500">
+                      {order.createdAt 
+                        ? format(new Date(order.createdAt), 'dd MMMM yyyy', { locale: ar })
+                        : 'غير متوفر'}
+                    </div>
+                    <div className="mt-1">
+                      <OrderStatusBadge status={order.status || 'pending'} />
+                    </div>
                   </div>
                 </div>
               ))}

@@ -2,22 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { ref, get, update } from 'firebase/database';
 import { database } from '../firebase/config';
 import { format } from 'date-fns';
-import arLocale from 'date-fns/locale/ar'; // استيراد اللغة العربية
-import { Search, Filter, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { ar } from 'date-fns/locale/ar';
+import { Search, Filter, ChevronLeft, ChevronRight, Phone } from 'lucide-react';
 import Header from '../components/Header';
 import OrderStatusBadge from '../components/OrderStatusBadge';
-import Sidebar from '../components/Sidebar';
 import { Order } from '../types';
 
 const Orders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null); // حالة للخطأ
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const ordersPerPage = 10;
 
   useEffect(() => {
@@ -33,7 +30,7 @@ const Orders: React.FC = () => {
             ...ordersData[key]
           }));
           
-          ordersArray.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); // حماية ضد createdAt غير معرف
+          ordersArray.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
           setOrders(ordersArray);
           setFilteredOrders(ordersArray);
         } else {
@@ -42,7 +39,6 @@ const Orders: React.FC = () => {
         }
       } catch (error) {
         console.error('خطأ في جلب الطلبات:', error);
-        setError('حدث خطأ أثناء تحميل الطلبات. حاول مرة أخرى لاحقاً.');
       } finally {
         setLoading(false);
       }
@@ -81,7 +77,6 @@ const Orders: React.FC = () => {
       );
     } catch (error) {
       console.error('خطأ في تحديث حالة الطلب:', error);
-      setError('فشل تحديث حالة الطلب. حاول مرة أخرى.');
     }
   };
 
@@ -89,16 +84,6 @@ const Orders: React.FC = () => {
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
   const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100" dir="rtl">
-        <div className="text-red-600 text-lg">{error}</div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -109,30 +94,12 @@ const Orders: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-2 sm:p-4" dir="rtl">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-
-      {/* Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40" 
-          onClick={toggleSidebar}
-        />
-      )}
+    <div className="min-h-screen bg-gray-100" dir="rtl">
+      {/* Header يحتوي على زر القائمة */}
+      <Header pendingOrdersCount={0} />
 
       {/* Main Content */}
-      <div className="flex-1">
-        <div className="flex items-center justify-between mb-4 bg-white p-2 rounded-lg shadow-md flex-wrap gap-2">
-          <Header />
-          <button 
-            className="p-2 text-indigo-900" 
-            onClick={toggleSidebar}
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-        </div>
-
+      <div className="flex-1 p-2 sm:p-4">
         <div className="mt-4">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">إدارة الطلبات</h2>
           
@@ -212,14 +179,25 @@ const Orders: React.FC = () => {
                       </td>
                       <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-right">
                         <div className="text-sm font-medium text-gray-900">{order.fullName || 'غير محدد'}</div>
-                        <div className="text-sm text-gray-500">{order.phone || 'غير متوفر'}</div>
+                        <div className="text-sm text-gray-500 flex items-center justify-end space-x-2 space-x-reverse">
+                          <span>{order.phone || 'غير متوفر'}</span>
+                          {order.phone && (
+                            <a
+                              href={`tel:${order.phone}`}
+                              className="text-indigo-600 hover:text-indigo-800"
+                              title="اتصال بالعميل"
+                            >
+                              <Phone className="h-5 w-5" />
+                            </a>
+                          )}
+                        </div>
                         <div className="text-sm text-gray-500">
                           {order.city || 'غير محدد'}، {order.address || 'غير محدد'}
                         </div>
                       </td>
                       <td className="px-2 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                         {order.createdAt 
-                          ? format(new Date(order.createdAt), 'dd MMMM yyyy', { locale: arLocale })
+                          ? format(new Date(order.createdAt), 'dd MMMM yyyy', { locale: ar })
                           : 'غير متوفر'}
                         <div className="text-xs">
                           {order.createdAt 

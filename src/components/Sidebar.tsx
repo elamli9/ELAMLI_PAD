@@ -35,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     >
       <div className="p-6 flex items-center space-x-3">
         <Package className="h-8 w-8" />
-        <h1 className="text-2xl font-bold">إدارة العملي</h1>
+        <h1 className="text-2xl font-bold"> لوحة التحكم ELAMLI </h1>
       </div>
       
       <nav className="flex-1 mt-6">
